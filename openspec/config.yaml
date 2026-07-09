@@ -1,0 +1,34 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+context: |
+  Project: Observability - SIF
+  Stack: Docker Compose, Prometheus, Grafana
+  Goal: monitor SIF microservices running on the same host but in different containers.
+  Network access from observability containers to host-published services should use host.docker.internal.
+  Monitored APIs are expected to expose Prometheus-compatible metrics at /metrics.
+  Keep configuration declarative and versioned in this repository.
+  Do not add Loki, Tempo, Jaeger, or OpenTelemetry unless a later proposal justifies them.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Always include Non-Goals.
+    - Call out assumptions about service ports and /metrics availability.
+  tasks:
+    - Break work into independently verifiable steps.

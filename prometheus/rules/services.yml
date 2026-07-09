@@ -1,0 +1,47 @@
+groups:
+  - name: sif-service-alerts
+    rules:
+      - alert: SifApiUnavailable
+        expr: up{project="sif"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.service }} unavailable"
+          description: "Prometheus cannot scrape {{ $labels.service }} in {{ $labels.environment }}."
+
+      - alert: SifHighP95Latency
+        expr: histogram_quantile(0.95, sum by (le, service, environment) (rate(http_request_duration_seconds_bucket{project="sif"}[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} high p95 latency"
+          description: "p95 latency is above 1 second for {{ $labels.service }}."
+
+      - alert: SifHigh5xxErrorRate
+        expr: (sum by (service, environment) (rate(http_requests_total{project="sif",status=~"5.."}[5m])) / sum by (service, environment) (rate(http_requests_total{project="sif"}[5m]))) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} high 5xx error rate"
+          description: "5xx responses are above 5% for {{ $labels.service }}."
+
+      - alert: SifHighProcessCpu
+        expr: rate(process_cpu_seconds_total{project="sif"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} high process CPU"
+          description: "Process CPU usage is high for {{ $labels.service }}."
+
+      - alert: SifHighResidentMemory
+        expr: process_resident_memory_bytes{project="sif"} > 536870912
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} high resident memory"
+          description: "Resident memory is above 512 MiB for {{ $labels.service }}."

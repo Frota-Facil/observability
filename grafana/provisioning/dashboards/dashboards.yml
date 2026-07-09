@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: SIF
+    orgId: 1
+    folder: SIF
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
