@@ -2,7 +2,7 @@
   "uid": "sif-overview",
   "title": "Overview",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "15s",
   "time": {
     "from": "now-1h",
@@ -14,6 +14,25 @@
       "type": "stat",
       "title": "APIs online",
       "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 3 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
       "targets": [
         { "expr": "sum(up{project=\"sif\"})", "refId": "A" }
       ]
@@ -22,27 +41,134 @@
       "id": 2,
       "type": "timeseries",
       "title": "Requests per second",
+      "description": "Total request rate per service. Uses Grafana's rate interval so low traffic is easier to see across different time ranges.",
       "gridPos": { "h": 8, "w": 18, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 3,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["lastNotNull", "max", "mean"]
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
       "targets": [
-        { "expr": "sum by (service) (rate(http_requests_total{project=\"sif\"}[5m]))", "legendFormat": "{{service}}", "refId": "A" }
+        {
+          "expr": "sum by (service) (rate(http_requests_total{project=\"sif\"}[$__rate_interval]))",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
       ]
     },
     {
       "id": 3,
-      "type": "timeseries",
-      "title": "p95 latency",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "type": "stat",
+      "title": "Requests in last 5m",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": 0
+        }
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
       "targets": [
-        { "expr": "histogram_quantile(0.95, sum by (le, service) (rate(http_request_duration_seconds_bucket{project=\"sif\"}[5m])))", "legendFormat": "{{service}}", "refId": "A" }
+        {
+          "expr": "sum by (service) (increase(http_requests_total{project=\"sif\"}[5m]))",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
       ]
     },
     {
       "id": 4,
       "type": "timeseries",
-      "title": "5xx error rate",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "title": "p95 latency",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["lastNotNull", "max"]
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
       "targets": [
-        { "expr": "sum by (service) (rate(http_requests_total{project=\"sif\",status=~\"5..\"}[5m])) / sum by (service) (rate(http_requests_total{project=\"sif\"}[5m]))", "legendFormat": "{{service}}", "refId": "A" }
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, service) (rate(http_request_duration_seconds_bucket{project=\"sif\"}[$__rate_interval])))",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "5xx error rate",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2,
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["lastNotNull", "max"]
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(http_requests_total{project=\"sif\",status=~\"5..\"}[$__rate_interval])) / clamp_min(sum by (service) (rate(http_requests_total{project=\"sif\"}[$__rate_interval])), 0.001)",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
       ]
     }
   ]
